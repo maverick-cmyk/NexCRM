@@ -1,0 +1,6 @@
+import {Router} from 'express'; import mongoose from 'mongoose'; import Contact from '../models/Contact.js'; import {requireAuth} from '../middleware/auth.js';
+const r=Router();r.use(requireAuth);const safe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+r.get('/',async(req,res,next)=>{try{const q={owner:req.user.id},s=req.query.search?.trim();if(s)q.$or=['name','company','email'].map(k=>({[k]:new RegExp(safe(s),'i')}));res.json({success:true,data:await Contact.find(q).sort({createdAt:-1}).limit(200)})}catch(e){next(e)}});
+r.post('/',async(req,res,next)=>{try{const {name,email,phone,company,jobTitle}=req.body;if(!name?.trim())return res.status(400).json({success:false,message:'Contact name is required.'});const d=await Contact.create({name,email,phone,company,jobTitle,owner:req.user.id});res.status(201).json({success:true,data:d})}catch(e){next(e)}});
+r.delete('/:id',async(req,res,next)=>{try{if(!mongoose.isValidObjectId(req.params.id))return res.status(400).json({success:false,message:'Invalid contact ID.'});const d=await Contact.findOneAndDelete({_id:req.params.id,owner:req.user.id});if(!d)return res.status(404).json({success:false,message:'Contact not found.'});res.json({success:true,message:'Contact deleted.'})}catch(e){next(e)}});
+export default r;

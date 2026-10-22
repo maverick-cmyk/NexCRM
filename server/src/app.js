@@ -1,0 +1,16 @@
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import auth from './routes/auth.js';
+import leads from './routes/leads.js';
+import contacts from './routes/contacts.js';
+import deals from './routes/deals.js';
+import dashboard from './routes/dashboard.js';
+const app = express();
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+app.use(express.json({ limit: '1mb' }));
+app.get('/api/health', (_req,res) => res.json({success:true,database:mongoose.connection.readyState===1?'connected':'disconnected'}));
+app.use('/api/auth',auth); app.use('/api/leads',leads); app.use('/api/contacts',contacts); app.use('/api/deals',deals); app.use('/api/dashboard',dashboard);
+app.use((_req,res)=>res.status(404).json({success:false,message:'Route not found'}));
+app.use((err,_req,res,_next)=>{ console.error(err.message); res.status(err.status||500).json({success:false,message:err.status?err.message:'Internal server error'}); });
+export default app;
